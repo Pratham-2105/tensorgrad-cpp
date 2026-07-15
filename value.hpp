@@ -28,3 +28,30 @@ std::shared_ptr<Value> matmul(std::shared_ptr<Value> a,
 
   return out;
 }
+
+std::shared_ptr<Value> add(std::shared_ptr<Value> a, std::shared_ptr<Value> b) {
+  auto out = std::make_shared<Value>(a->data + b->data,
+                                     std::vector<std::shared_ptr<Value>>{a, b});
+
+  Value *out_raw = out.get();
+  out->_backward = [a, b, out_raw]() {
+    a->grad = a->grad + out_raw->grad;
+    b->grad = b->grad + out_raw->grad;
+  };
+
+  return out;
+}
+
+std::shared_ptr<Value> tanh_(std::shared_ptr<Value> a) {
+  auto out = std::make_shared<Value>(
+      a->data.apply([](double x) { return std::tanh(x); }),
+      std::vector<std::shared_ptr<Value>>{a});
+
+  Value *out_raw = out.get();
+  out->_backward = [a, out_raw]() {
+    a->grad = a->grad + out_raw->data.apply([](double x) { return 1 - x * x; })
+                            .hadamard(out_raw->grad);
+  };
+
+  return out;
+}

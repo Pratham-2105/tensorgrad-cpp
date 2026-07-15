@@ -1,5 +1,6 @@
 #include "value.hpp"
 #include <iostream>
+#include <memory>
 
 int main() {
   /*
@@ -21,6 +22,7 @@ int main() {
 
     */
 
+  /*
   Matrix A(2, 3, false);
   A.at(0, 0) = 1;
   A.at(0, 1) = 2;
@@ -63,6 +65,56 @@ int main() {
   a->grad.print_matrix();
   std::cout << "b->grad (want 3x2):\n";
   b->grad.print_matrix();
+*/
+
+  /*
+  Matrix A(2, 2, false);
+  A.at(0, 0) = 1;
+  A.at(0, 1) = 2;
+  A.at(1, 0) = 3;
+  A.at(1, 1) = 4;
+  Matrix B(2, 2, false);
+  B.at(0, 0) = 5;
+  B.at(0, 1) = 6;
+  B.at(1, 0) = 7;
+  B.at(1, 1) = 8;
+
+  auto a = std::make_shared<Value>(A);
+  auto b = std::make_shared<Value>(B);
+  auto c = add(a, b);
+
+  std::cout << "c->data (want 6 8 / 10 12):\n";
+  c->data.print_matrix();
+
+  c->grad.at(0, 0) = 1;
+  c->grad.at(0, 1) = 2;
+  c->grad.at(1, 0) = 3;
+  c->grad.at(1, 1) = 4;
+  c->_backward();
+
+  std::cout << "a->grad (want 1 2 / 3 4):\n";
+  a->grad.print_matrix();
+  std::cout << "b->grad (want 1 2 / 3 4):\n";
+  b->grad.print_matrix();
+*/
+
+  Matrix A(1, 3, false);
+  A.at(0, 0) = 0;
+  A.at(0, 1) = 1;
+  A.at(0, 2) = -1;
+
+  auto a = std::make_shared<Value>(A);
+  auto c = tanh_(a);
+
+  std::cout << "c->data (want 0  0.761594  -0.761594):\n";
+  c->data.print_matrix();
+
+  for (auto &v : c->grad.matrix)
+    v = 1.0;
+  c->_backward();
+
+  std::cout << "a->grad (want 1  0.419974  0.419974):\n";
+  a->grad.print_matrix();
 
   return 0;
 }
