@@ -1,6 +1,7 @@
 #include "matrix.hpp"
 #include <functional>
 #include <memory>
+#include <set>
 #include <vector>
 
 struct Value {
@@ -13,6 +14,33 @@ struct Value {
 
   Value(Matrix data_in, std::vector<std::shared_ptr<Value>> child)
       : data(data_in), grad(data_in.rows, data_in.cols, 0), children(child) {}
+
+  void build_topo(std::vector<Value *> &topo, std::set<Value *> &visited) {
+
+    if (visited.count(this))
+      return;
+
+    visited.insert(this);
+
+    for (auto &child : this->children) {
+      child->build_topo(topo, visited);
+    }
+
+    topo.push_back(this);
+  }
+
+  void backward() {
+    std::vector<Value *> topo;
+    std::set<Value *> visited;
+    build_topo(topo, visited);
+
+    for (auto &v : this->grad.matrix)
+      v = 1.0;
+
+    for (auto it = topo.rbegin(); it != topo.rend(); ++it) {
+      (*it)->_backward();
+    }
+  }
 };
 
 std::shared_ptr<Value> matmul(std::shared_ptr<Value> a,

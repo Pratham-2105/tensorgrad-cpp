@@ -98,23 +98,67 @@ int main() {
   b->grad.print_matrix();
 */
 
+  /*
+    Matrix A(1, 3, false);
+    A.at(0, 0) = 0;
+    A.at(0, 1) = 1;
+    A.at(0, 2) = -1;
+
+    auto a = std::make_shared<Value>(A);
+    auto c = tanh_(a);
+
+    std::cout << "c->data (want 0  0.761594  -0.761594):\n";
+    c->data.print_matrix();
+
+    for (auto &v : c->grad.matrix)
+      v = 1.0;
+    c->_backward();
+
+    std::cout << "a->grad (want 1  0.419974  0.419974):\n";
+    a->grad.print_matrix();
+  */
+
   Matrix A(1, 3, false);
-  A.at(0, 0) = 0;
-  A.at(0, 1) = 1;
-  A.at(0, 2) = -1;
+  A.at(0, 0) = 1;
+  A.at(0, 1) = 2;
+  A.at(0, 2) = 3;
+
+  Matrix W(3, 2, false);
+  W.at(0, 0) = 0.1;
+  W.at(0, 1) = -0.2;
+  W.at(1, 0) = 0.0;
+  W.at(1, 1) = 0.1;
+  W.at(2, 0) = -0.1;
+  W.at(2, 1) = 0.0;
 
   auto a = std::make_shared<Value>(A);
-  auto c = tanh_(a);
+  auto w = std::make_shared<Value>(W);
+  auto c = tanh_(matmul(a, w));
 
-  std::cout << "c->data (want 0  0.761594  -0.761594):\n";
+  std::cout << "c->data:\n";
   c->data.print_matrix();
-
-  for (auto &v : c->grad.matrix)
-    v = 1.0;
-  c->_backward();
-
-  std::cout << "a->grad (want 1  0.419974  0.419974):\n";
+  c->backward();
+  std::cout << "a->grad:\n";
   a->grad.print_matrix();
+  std::cout << "w->grad:\n";
+  w->grad.print_matrix();
+
+  Matrix X(1, 3, false);
+  X.at(0, 0) = 0;
+  X.at(0, 1) = 1;
+  X.at(0, 2) = -1;
+
+  auto x = std::make_shared<Value>(X);
+  auto t = tanh_(x);
+  auto d = add(t, t);
+
+  std::cout << "d->data:\n";
+  d->data.print_matrix();
+  d->backward();
+  std::cout << "t->grad:\n";
+  t->grad.print_matrix();
+  std::cout << "x->grad:\n";
+  x->grad.print_matrix();
 
   return 0;
 }
