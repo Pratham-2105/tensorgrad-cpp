@@ -1,10 +1,31 @@
-# Build artifacts
-tensorgrad
+# Build outputs
 *.o
 *.out
 *.exe
-*.dSYM/
-# Editor / OS
+tensorgrad
+a.out
+
+# Debug/profiling
+*.prof
+gmon.out
+callgrind.out.*
+
+# VS Code
 .vscode/
-*.swp
+
+# CLion / JetBrains
+.idea/
+
+# CMake
+build/
+cmake-build-*/
+
+# Dataset
+data/
+
+# Model checkpoints
+*.bin
+
+# OS files
 .DS_Store
+Thumbs.db
