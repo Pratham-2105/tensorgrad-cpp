@@ -3,6 +3,7 @@
 *.out
 *.exe
 tensorgrad
+predict
 a.out
 
 # Debug/profiling
