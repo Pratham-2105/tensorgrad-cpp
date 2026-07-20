@@ -1,9 +1,27 @@
 #include "makemore.hpp"
 #include <iostream>
+#include <random>
 #include <vector>
+
+i32 sample_row(const std::vector<f32> &row, std::mt19937 &gen) {
+  std::uniform_real_distribution<f32> dist(0.0, 1.0);
+  f32 r = dist(gen);
+
+  f32 cumulative = 0.0;
+
+  for (size_t j = 0; j < row.size(); ++j) {
+    cumulative += row[j];
+
+    if (cumulative > r)
+      return j;
+  }
+
+  return 26;
+}
 
 int main() {
   std::vector<std::string> names = load_names("data/names.txt");
+  std::mt19937 gen(std::random_device{}());
 
   /*
     std::cout << "count: " << names.size() << '\n';
@@ -32,17 +50,19 @@ int main() {
     }
   }
 
-  std::cout << "N[.][e] = " << N[0][5] << "  (expect 1531)\n";
-  std::cout << "N[a][.] = " << N[stoi_('a')][0] << "  (expect 6640)\n";
-  std::cout << "N[n][.] = " << N[(stoi_('n'))][0] << "  (expect 6763)\n";
+  /*
+    std::cout << "N[.][e] = " << N[0][5] << "  (expect 1531)\n";
+    std::cout << "N[a][.] = " << N[stoi_('a')][0] << "  (expect 6640)\n";
+    std::cout << "N[n][.] = " << N[(stoi_('n'))][0] << "  (expect 6763)\n";
 
-  i64 total = 0;
+    i64 total = 0;
 
-  for (const auto &v : N)
-    for (i32 c : v)
-      total += c;
+    for (const auto &v : N)
+      for (i32 c : v)
+        total += c;
 
-  std::cout << "total   = " << total << "  (expect 228146)\n";
+    std::cout << "total   = " << total << "  (expect 228146)\n";
+  */
 
   std::vector<std::vector<f32>> P(27, std::vector<f32>(27, 0.0));
 
@@ -61,6 +81,19 @@ int main() {
     }
   }
 
+  /*
+  for (const auto &v1 : P) {
+    char ch = 'a' - 1;
+    for (const auto &v2 : v1) {
+      std::cout << ch << " " << v2 << ", ";
+      ch++;
+    }
+
+    std::cout << '\n';
+  }
+
+  */
+  /*
   double row0 = 0.0, row1 = 0.0;
   for (int j = 0; j < 27; ++j)
     row0 += P[0][j];
@@ -71,6 +104,43 @@ int main() {
   std::cout << "row 1 sum = " << row1 << "  (expect ~1.0)\n";
   std::cout << "P[.][e]   = " << P[0][5] << "  (expect ~0.0478)\n";
   std::cout << "P[a][.]   = " << P[1][0] << "  (expect ~0.1961)\n";
+*/
+
+  /*
+  for (i32 n = 0; n < 10; ++n) {
+    std::string name;
+    i32 cur = 0;
+
+    while (true) {
+      i32 next = sample_row(P[cur], gen);
+
+      if (next == 0)
+        break;
+
+      name += itos_(next);
+      cur = next;
+    }
+
+    std::cout << name << '\n';
+  }
+
+  */
+  f64 accumulate = 0.0;
+  i64 count = 0;
+
+  for (const auto &name : names) {
+    std::string s = '.' + name + '.';
+
+    for (size_t i = 1; i < s.size(); ++i) {
+      char prev = s[i - 1];
+      char curr = s[i];
+
+      accumulate += -log(P[stoi_(prev)][stoi_(curr)]);
+      ++count;
+    }
+  }
+
+  std::cout << "avg NLL = " << accumulate / count << "  (expect ~2.45)\n";
 
   return 0;
 }
