@@ -28,20 +28,31 @@ std::shared_ptr<Value> embed_context(std::shared_ptr<Value> C,
 }
 
 int main() {
-  // tiny embedding table: 2 x 27 (embed_dim x vocab), random init
-  Matrix Cm(2, 27, true);
-  auto C = std::make_shared<Value>(Cm);
+  auto names = load_names("data/names.txt");
+  Dataset ds = build_dataset(names, 3);
 
-  // embed context [0, 0, 5]
-  auto x = embed_context(C, {0, 0, 5}, 27);
+  const i32 vocab = 27, embed_dim = 2, block = 3;
+  const i32 n_in = embed_dim * block; // 6
+  const i32 H = 100;
 
-  std::cout << "x shape: " << x->data.rows << "x" << x->data.cols
-            << " (expect 6x1)\n";
+  auto C = std::make_shared<Value>(Matrix(embed_dim, vocab, true)); // 2x27
+  auto W1 = std::make_shared<Value>(Matrix(H, n_in, true));         // 100x6
+  auto b1 = std::make_shared<Value>(Matrix(H, 1, false));           // 100x1
+  auto W2 = std::make_shared<Value>(Matrix(vocab, H, true));        // 27x100
+  auto b2 = std::make_shared<Value>(Matrix(vocab, 1, false));       // 27x1
 
-  // rows 4-5 of x are the 3rd context index's lookup = column 5 of C.
-  std::cout << "x[4], x[5]: " << x->data.at(4, 0) << " " << x->data.at(5, 0)
-            << "\n";
-  std::cout << "C col 5:    " << C->data.at(0, 5) << " " << C->data.at(1, 5)
-            << "\n";
-  std::cout << "(those two lines should match)\n";
+  std::vector<std::shared_ptr<Value>> params = {C, W1, b1, W2, b2};
+
+  auto x = embed_context(C, ds.X[0], vocab); // 6x1
+
+  auto h = tanh_(add(matmul(W1, x), b1));
+  auto logits = add(matmul(W2, h), b2);
+
+  Matrix target = one_hot(ds.Y[0], vocab);
+
+  auto loss = cross_entropy(logits, target);
+
+  std::cout << "loss: " << loss->data.at(0, 0) << "  (expect ~3.3)\n";
+
+  return 0;
 }
