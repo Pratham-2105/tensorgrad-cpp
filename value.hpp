@@ -1,10 +1,10 @@
 #include "matrix.hpp"
 #include <algorithm>
-#include <cinttypes>
 #include <functional>
 #include <memory>
 #include <numeric>
 #include <set>
+#include <stdexcept>
 #include <vector>
 
 struct Value {
@@ -132,6 +132,44 @@ std::shared_ptr<Value> cross_entropy(std::shared_ptr<Value> logits,
   Value *out_raw = out.get();
   out->_backward = [logits, probs, target, out_raw]() {
     logits->grad = logits->grad + (probs - target);
+  };
+
+  return out;
+}
+
+inline std::shared_ptr<Value>
+concat(const std::vector<std::shared_ptr<Value>> &children) {
+  i64 total_rows = 0;
+  for (const auto &c : children) {
+    if (c->data.cols != 1)
+      throw std::invalid_argument("concat expects column vector (cols == 1)");
+
+    total_rows += c->data.rows;
+  }
+
+  Matrix out_data(total_rows, 1, false);
+
+  {
+    i64 offset = 0;
+    for (const auto &c : children) {
+      for (i64 i = 0; i < c->data.rows; ++i) {
+        out_data.at(offset + i, 0) = c->data.at(i, 0);
+      }
+      offset += c->data.rows;
+    }
+  }
+
+  auto out = std::make_shared<Value>(out_data, children);
+  Value *out_raw = out.get();
+
+  out->_backward = [out_raw, children]() {
+    i64 offset = 0;
+    for (const auto &c : children) {
+      for (i64 i = 0; i < c->data.rows; ++i) {
+        c->grad.at(i, 0) = c->grad.at(i, 0) + out_raw->grad.at(offset + i, 0);
+      }
+      offset += c->data.rows;
+    }
   };
 
   return out;
